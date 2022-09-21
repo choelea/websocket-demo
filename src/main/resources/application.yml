@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: WebSocket Demo
+    version: 1.0.0
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true

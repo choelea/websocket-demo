@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello WebSocket</title>
+
+    <meta charset="utf-8">
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/main.css" rel="stylesheet">
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <!--<script src="/webjars/stomp-websocket/stomp.min.js"></script>-->
+    <script src="/stomp.js"></script>
+    <script>
+        var stompClient = null;
+
+        function setConnected(connected) {
+            $("#connect").prop("disabled", connected);
+            $("#disconnect").prop("disabled", !connected);
+            if (connected) {
+                $("#globalMsgTable").show();
+            }
+            else {
+                $("#globalMsgTable").hide();
+            }
+            $("#globalMsg").html("");
+        }
+
+        function connect() {
+            let name = $("#name").val();
+            const url = "ws://localhost:8080/ws?user="+name;
+            stompClient = Stomp.client(url);
+            stompClient.connect({},function (frame) {
+                setConnected(true);
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic/messages', function (message) {
+                    showGlobalMsg(JSON.parse(message.body).content);
+                });
+
+                stompClient.subscribe('/user/topic/private-messages', function (message) {
+                    let content = JSON.parse(message.body).content;
+                    $("#privateMsg").append("<tr><td>" + content + "</td></tr>");
+                });
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            console.log("Disconnected");
+        }
+
+        function sendMessage() {
+            stompClient.send("/ws/message", {}, JSON.stringify({'content': $("#message").val()}));
+        }
+
+        function sendPrivateMessage() {
+            stompClient.send("/ws/private-message", {}, JSON.stringify({'toUser':$("#toUser").val(), 'content': $("#privateMessage").val()}));
+        }
+
+        function showGlobalMsg(message) {
+            $("#globalMsg").append("<tr><td>" + message + "</td></tr>");
+        }
+
+        $(function () {
+            $("form").on('submit', function (e) {
+                e.preventDefault();
+            });
+            $( "#connect" ).click(function() { connect(); });
+            $( "#disconnect" ).click(function() { disconnect(); });
+            $( "#sendMsg" ).click(function() { sendMessage(); });
+            $( "#sendPrivateMsg" ).click(function() { sendPrivateMessage(); });
+
+        });
+
+    </script>
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
+    enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div id="main-content" class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="connect">WebSocket connection:</label>
+                    <input type="text" id="name" placeholder="Your name here...">
+                    <button id="connect" class="btn btn-default" type="submit">Connect</button>
+                    <button id="disconnect" class="btn btn-default" type="submit" disabled="disabled">Disconnect
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-12">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="message">发送全局消息至：  @MessageMapping("/message")</label>
+                    <input type="text" id="message" class="form-control" placeholder="Your message here...">
+                </div>
+                <button id="sendMsg" class="btn btn-default" type="submit">Send Message</button>
+            </form>
+        </div>
+
+        <div class="col-md-12">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="message">发送私有消息至：  @MessageMapping("/message")</label>
+                    <input type="text" id="toUser" placeholder="To user">
+                    <input type="text" id="privateMessage" class="form-control" placeholder="Your Private message here...">
+                </div>
+                <button id="sendPrivateMsg" class="btn btn-default" type="submit">Send Message</button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="globalMsgTable" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>广播消息,所有订阅 "/topic/messages" 都可以收到</th>
+                </tr>
+                </thead>
+                <tbody id="globalMsg" style="color: blue">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <table id="conversationMsgTable" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>私有消息， 只接受发给我的消息</th>
+                </tr>
+                </thead>
+                <tbody id="privateMsg" style="color: blue">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
