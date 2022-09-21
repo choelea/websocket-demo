@@ -2,8 +2,12 @@ spring:
   application:
     name: WebSocket Demo
     version: 1.0.0
-  web:
-    resources:
-      cache:
-        cachecontrol:
-          no-cache: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://10.3.69.41:3306/icviews?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC
+    username: root
+    password: Abc#123456
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
