@@ -16,7 +16,7 @@ public class WsChat extends  BaseEntity<Long>{
     private static final long serialVersionUID = 981677910418186165L;
 
 
-    @Column(length = 64,unique=true)
+    @Column(length = 64)
     private String name;
 
     private Long userOne;

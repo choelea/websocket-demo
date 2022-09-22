@@ -1,12 +1,16 @@
 package tech.icoding.websocket.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ResolvableType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.util.Assert;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 /**
  * @author : Joe
@@ -17,8 +21,19 @@ public abstract class BaseService<M extends JpaRepository<T, ID>, T, ID> {
     @Autowired
     protected M repository;
 
+    private Class<T> entityClass;
+
     @PersistenceContext
     protected EntityManager entityManager;
+
+    /**
+     * 构造方法
+     */
+    @SuppressWarnings("unchecked")
+    public BaseService() {
+        ResolvableType resolvableType = ResolvableType.forClass(getClass());
+        entityClass = (Class<T>) resolvableType.as(BaseService.class).getGeneric().resolve();
+    }
     /**
      * 更具ID查找Entity
      * @param id
@@ -53,4 +68,5 @@ public abstract class BaseService<M extends JpaRepository<T, ID>, T, ID> {
     public T update(T entity) {
         return repository.save(entity);
     }
+
 }

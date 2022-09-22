@@ -55,11 +55,11 @@ public abstract class BaseEntity<ID extends Serializable> implements Serializabl
 	private LocalDateTime lastModifiedTime;
 
 	/**
-	 * 版本
+	 * 版本, 去掉version提高性能
 	 */
-	@Version
-	@Column(nullable = false)
-	private Long version;
+//	@Version
+//	@Column(nullable = false)
+//	private Long version;
 
 	@PrePersist
 	public void preSave() {

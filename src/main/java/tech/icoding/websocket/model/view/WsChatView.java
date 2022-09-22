@@ -2,6 +2,8 @@ package tech.icoding.websocket.model.view;
 
 import lombok.Data;
 
+import javax.persistence.Entity;
+
 /**
  *
  * 视图
@@ -11,7 +13,9 @@ import lombok.Data;
 @Data
 public class WsChatView {
     private Long chatId;
-    private String user;
+    private Long user;
     private String nickName;
     private String headimgUrl;
+//    private Long lastMsgId;
+//    private String lastText;
 }

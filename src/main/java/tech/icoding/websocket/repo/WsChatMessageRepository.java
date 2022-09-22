@@ -7,4 +7,5 @@ import tech.icoding.websocket.model.core.WsChatMessage;
 
 @Repository
 public interface WsChatMessageRepository extends JpaSpecificationExecutor<Long>, JpaRepository<WsChatMessage, Long> {
+
 }

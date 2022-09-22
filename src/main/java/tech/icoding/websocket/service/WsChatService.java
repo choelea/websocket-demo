@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import tech.icoding.websocket.model.core.WsChat;
 import tech.icoding.websocket.model.core.WsChatMessage;
-import tech.icoding.websocket.repo.WsChatMessageRepository;
+import tech.icoding.websocket.model.view.WsChatView;
 import tech.icoding.websocket.repo.WsChatRepository;
 
 import javax.persistence.Tuple;
@@ -16,6 +16,7 @@ import javax.persistence.TypedQuery;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,12 +27,53 @@ import java.util.List;
 @Service
 public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
 
-    private WsChatMessageRepository wsChatMessageRepository;
+    private WsChatMessageService wsChatMessageService;
 
-    public WsChatService(WsChatMessageRepository wsChatMessageRepository) {
-        this.wsChatMessageRepository = wsChatMessageRepository;
+    public WsChatService(WsChatMessageService wsChatMessageService) {
+        this.wsChatMessageService = wsChatMessageService;
     }
 
+    /**
+     * 根据用户寻找chat 列表
+     * @param userId
+     * @return
+     */
+    public List<WsChatView> findChats(Long userId){
+        final List<WsChatView> resultList = findByFirstUser(userId);
+        resultList.addAll(findBySecondUser(userId));
+        return resultList;
+    }
+    private List<WsChatView> findByFirstUser(Long userId){
+        final TypedQuery<Tuple> query = entityManager.createQuery(
+                "SELECT c.id AS chatId,c.userTwo as user, u.nickName as nickName, u.headimgUrl as headimgUrl " +
+                        "FROM WsChat c JOIN WxUser u ON c.userTwo = u.id WHERE c.userOne= :userId", Tuple.class);
+        query.setParameter("userId", userId);
+        query.setMaxResults(100);
+        final List<Tuple> resultList = query.getResultList();
+        return convert(resultList);
+    }
+
+    private List<WsChatView> findBySecondUser(Long userId){
+        final TypedQuery<Tuple> query = entityManager.createQuery(
+                "SELECT c.id AS chatId,c.userOne as user, u.nickName as nickName, u.headimgUrl as headimgUrl " +
+                        "FROM WsChat c JOIN WxUser u ON c.userOne = u.id WHERE c.userTwo= :userId", Tuple.class);
+        query.setParameter("userId", userId);
+        query.setMaxResults(100);
+        final List<Tuple> resultList = query.getResultList();
+        return convert(resultList);
+    }
+
+    private List<WsChatView> convert(List<Tuple> resultList){
+        List<WsChatView> targetList = new ArrayList<>();
+        if(!resultList.isEmpty()){
+            resultList.forEach(tuple -> {
+                WsChatView view = new WsChatView();
+                copy(tuple, view);
+                targetList.add(view);
+            });
+        }
+        return targetList;
+    }
     /**
      * 获取/开启聊天窗口
      * @param userOne
@@ -70,7 +112,7 @@ public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
      * @return
      */
     public List<WsChatMessage> findMessages(Long id, Long endId, Integer size){
-        final TypedQuery<WsChatMessage> query = entityManager.createQuery("SELECT c FROM WsChatMessage c  WHERE c.chatId= :chatId AND  c.id < :endId", WsChatMessage.class);
+        final TypedQuery<WsChatMessage> query = entityManager.createQuery("SELECT c FROM WsChatMessage c  WHERE c.chatId= :chatId AND  c.id < :endId order by c.id desc ", WsChatMessage.class);
         query.setParameter("chatId", id);
         query.setParameter("endId", endId);
         query.setMaxResults(size);
@@ -78,7 +120,6 @@ public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
     }
     /**
      * https://vladmihalcea.com/the-best-way-to-map-a-projection-query-to-a-dto-with-jpa-and-hibernate/
-     * @param productId
      * @return
      */
 //    public List<WsChatView> findChats(Long productId) {
@@ -127,7 +168,16 @@ public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
         });
     }
 
-    public WsChatMessage saveMessage(WsChatMessage wsChatMessage) {
-        return wsChatMessageRepository.save(wsChatMessage);
+
+    /**
+     * 更新日志
+     * @param chatId
+     * @param userId
+     * @param lastMsgId
+     * @return
+     */
+    public void markRead(Long chatId, Long userId, Long lastMsgId) {
+        final int i = wsChatMessageService.markRead(chatId, userId, lastMsgId);
+
     }
 }

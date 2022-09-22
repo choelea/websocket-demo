@@ -5,8 +5,10 @@ import org.springframework.web.bind.annotation.*;
 import tech.icoding.websocket.data.Result;
 import tech.icoding.websocket.exception.BizException;
 import tech.icoding.websocket.form.ChatMsgForm;
+import tech.icoding.websocket.form.IdForm;
 import tech.icoding.websocket.model.core.WsChat;
 import tech.icoding.websocket.model.core.WsChatMessage;
+import tech.icoding.websocket.service.WsChatMessageService;
 import tech.icoding.websocket.service.WsChatService;
 import java.util.List;
 
@@ -19,9 +21,16 @@ import java.util.List;
 public class ChatController {
 
     private WsChatService wsChatService;
+    private WsChatMessageService wsChatMessageService;
 
-    public ChatController(WsChatService wsChatService) {
+    public ChatController(WsChatService wsChatService, WsChatMessageService wsChatMessageService) {
         this.wsChatService = wsChatService;
+        this.wsChatMessageService = wsChatMessageService;
+    }
+
+    @GetMapping("/users/{userId}/chats")
+    public Result chats(@PathVariable Long userId){
+        return Result.success(wsChatService.findChats(userId));
     }
 
     /**
@@ -40,6 +49,17 @@ public class ChatController {
             wsChat = wsChatService.create(userTwo, userOne);
         }
         return Result.success(wsChat);
+    }
+
+    /**
+     * 退出私聊窗口, 根据userId和chatId及最后一条MsgID将小于等于该msgId的消息置为已读
+     * @param userId
+     * @return
+     */
+    @PutMapping("/users/{userId}/chats/{id}/_quit")
+    public Result quit(@PathVariable Long userId, @PathVariable Long id, @RequestBody IdForm idForm){
+        wsChatService.markRead(id, userId, idForm.getId() );
+        return Result.success();
     }
 
     /**
@@ -62,7 +82,7 @@ public class ChatController {
         WsChatMessage wsChatMessage = new WsChatMessage();
         BeanUtils.copyProperties(chatMsgForm, wsChatMessage);
         wsChatMessage.setChatId(id);
-        wsChatService.saveMessage(wsChatMessage);
+        wsChatMessageService.save(wsChatMessage);
         return Result.success();
     }
 }
