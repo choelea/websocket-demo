@@ -34,6 +34,26 @@ public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
     }
 
     /**
+     * https://vladmihalcea.com/the-best-way-to-map-a-projection-query-to-a-dto-with-jpa-and-hibernate/
+     * @return
+     */
+    public List<WsChatView> findChatsByJpql(Long userId) {
+        final TypedQuery<Tuple> query = entityManager.createQuery(
+                "SELECT c.id AS chatId, " +
+                        "(case when c.userOne=:userId then u2.nickName else u1.nickName end) AS nickName, "+
+                        "(case when c.userOne=:userId then u2.headimgUrl else u1.headimgUrl end) AS headimgUrl, " +
+                        "(case when c.userOne=:userId then u2.id else u1.id end) AS user " +
+                        "FROM WsChat c JOIN WxUser u1 ON c.userOne = u1.id " +
+                        "JOIN WxUser u2 ON c.userTwo = u2.id " +
+                        "WHERE c.userOne = :userId or c.userTwo = :userId", Tuple.class);
+
+        query.setParameter("userId", userId);
+        query.setMaxResults(100);
+        List<WsChatView> resultList = convert(query.getResultList());
+        return resultList;
+    }
+
+    /**
      * 根据用户寻找chat 列表
      * @param userId
      * @return
@@ -104,41 +124,8 @@ public class WsChatService extends BaseService<WsChatRepository, WsChat, Long> {
         return save(wsChat);
     }
 
-    /**
-     * 获取指定Chat的消息列表
-     * @param id
-     * @param endId
-     * @param size
-     * @return
-     */
-    public List<WsChatMessage> findMessages(Long id, Long endId, Integer size){
-        final TypedQuery<WsChatMessage> query = entityManager.createQuery("SELECT c FROM WsChatMessage c  WHERE c.chatId= :chatId AND  c.id < :endId order by c.id desc ", WsChatMessage.class);
-        query.setParameter("chatId", id);
-        query.setParameter("endId", endId);
-        query.setMaxResults(size);
-        return query.getResultList();
-    }
-    /**
-     * https://vladmihalcea.com/the-best-way-to-map-a-projection-query-to-a-dto-with-jpa-and-hibernate/
-     * @return
-     */
-//    public List<WsChatView> findChats(Long productId) {
-//        final TypedQuery<Tuple> query = entityManager.createQuery("SELECT ps.code as code, p.id as id, ps.value as value, p.name as name "
-//                + "FROM WsChat c JOIN Product p ON ps.product = p WHERE p.id = :productId", Tuple.class);
-//
-//
-//        query.setParameter("productId", productId);
-//        final List<Tuple> resultList = query.getResultList();
-//        List<ProdSpecView> targetList = new ArrayList<>();
-//        if(!resultList.isEmpty()){
-//            resultList.forEach(tuple -> {
-//                ProdSpecView prodSpecView = new ProdSpecView();
-//                copy(tuple, prodSpecView);
-//                targetList.add(prodSpecView);
-//            });
-//        }
-//        return targetList;
-//    }
+
+
 
     public void copy(Tuple source, Object target, @Nullable String... ignoreProperties){
         Assert.notNull(source, "Source must not be null");

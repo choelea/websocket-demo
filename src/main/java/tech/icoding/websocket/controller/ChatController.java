@@ -28,9 +28,14 @@ public class ChatController {
         this.wsChatMessageService = wsChatMessageService;
     }
 
+    /**
+     * 获取chat列表
+     * @param userId
+     * @return
+     */
     @GetMapping("/users/{userId}/chats")
     public Result chats(@PathVariable Long userId){
-        return Result.success(wsChatService.findChats(userId));
+        return Result.success(wsChatService.findChatsByJpql(userId));
     }
 
     /**
@@ -71,7 +76,7 @@ public class ChatController {
      */
     @GetMapping("/chats/{id}/messages")
     public Result open(@PathVariable Long id,@RequestParam Long endId, @RequestParam Integer size){
-        final List<WsChatMessage> messages = wsChatService.findMessages(id, endId, size);
+        final List<WsChatMessage> messages = wsChatMessageService.findMessages(id, endId, size);
         return Result.success(messages);
     }
 

@@ -26,7 +26,7 @@
 
         function connect() {
             let name = $("#name").val();
-            const url = "ws://localhost:8080/ws?user="+name;
+            const url = "ws://10.3.73.123:8080/ws?user="+name;
             stompClient = Stomp.client(url);
             stompClient.connect({},function (frame) {
                 setConnected(true);

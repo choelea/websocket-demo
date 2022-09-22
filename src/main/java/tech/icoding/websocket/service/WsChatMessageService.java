@@ -11,6 +11,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,48 @@ import java.util.List;
 @Service
 @Slf4j
 public class WsChatMessageService extends BaseService<WsChatMessageRepository, WsChatMessage, Long> {
+
+
+    /**
+     * 获取指定Chat的消息列表
+     * @param id
+     * @param endId
+     * @param size
+     * @return
+     */
+//    public List<WsChatMessage> findMessages(Long id, Long endId, Integer size){
+//        final TypedQuery<WsChatMessage> query = entityManager.createQuery(
+//                "SELECT c FROM WsChatMessage c  WHERE c.chatId= :chatId AND  c.id < :endId order by c.id desc ", WsChatMessage.class);
+//        query.setParameter("chatId", id);
+//        query.setParameter("endId", endId);
+//        query.setMaxResults(size);
+//        return query.getResultList();
+//    }
+
+
+
+    /**
+     * 查找最后一条记录的ID
+     * @param chatId
+     * @param endId 减少搜索范围提高效率
+     * @return
+     */
+    public List<WsChatMessage> findMessages(Long chatId, Long endId, Integer size){
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<WsChatMessage> criteriaQuery = criteriaBuilder.createQuery(WsChatMessage.class);
+        Root<WsChatMessage> root = criteriaQuery.from(WsChatMessage.class);
+        criteriaQuery.select(root);
+        Predicate restrictions = criteriaBuilder.equal(root.get(WsChatMessage_.CHAT_ID), chatId);
+
+        if(endId!=null){
+            restrictions = criteriaBuilder.and(restrictions, criteriaBuilder.le(root.get(WsChatMessage_.ID), endId));
+        }
+        criteriaQuery.where(restrictions);
+        criteriaQuery.orderBy(criteriaBuilder.desc(root.get(WsChatMessage_.ID)));
+        TypedQuery<WsChatMessage> query = entityManager.createQuery(criteriaQuery);
+        query.setMaxResults(size);
+        return query.getResultList();
+    }
 
     /**
      * 查找最后一条记录的ID
